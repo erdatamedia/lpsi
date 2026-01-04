@@ -1,0 +1,31 @@
+### Register institution
+POST http://localhost:3000/institutions/register
+Content-Type: application/json
+
+{
+  "name": "Contoh Instansi",
+  "slug": "contoh-instansi",
+  "trackingTitle": "Judul Tracking",
+  "adminName": "Admin Contoh",
+  "adminEmail": "admin@example.com",
+  "adminPassword": "password123"
+}
+
+### Login
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "password123"
+}
+
+### Profile (replace <token> from login response)
+GET http://localhost:3000/auth/profile
+Authorization: Bearer <token>
+
+### Tracking by kode
+GET http://localhost:3000/tracking?kode=ABC123
+
+### List all tracking (debug)
+GET http://localhost:3000/tracking/all

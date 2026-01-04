@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model document {
+  id            Int          @id @default(autoincrement())
+  kode          String       @db.VarChar(100)
+  id_user       Int
+  durasi        Int
+  status        String       @db.VarChar(30)
+  created_at    DateTime?    @db.DateTime(0)
+  institutionId Int?
+  institution   institution? @relation(fields: [institutionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_document_institution")
+
+  user      users      @relation(fields: [id_user], references: [id])
+  historis  historis[]
+
+  @@index([institutionId], map: "fk_document_institution")
+}
+
+model historis {
+  id          Int      @id @default(autoincrement())
+  id_document Int
+  waktu       DateTime @db.DateTime(0)
+  status      String   @db.VarChar(100)
+  note        String?  @db.VarChar(255)
+
+  document document @relation(fields: [id_document], references: [id])
+}
+
+model users {
+  id            Int          @id @default(autoincrement())
+  name          String       @db.VarChar(100)
+  email         String       @db.VarChar(100)
+  password      String       @db.VarChar(100)
+  institutionId Int?
+  institution   institution? @relation(fields: [institutionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_users_institution")
+  documents     document[]
+
+  @@index([institutionId], map: "fk_users_institution")
+}
+
+model institution {
+  id            Int        @id @default(autoincrement())
+  name          String     @db.VarChar(150)
+  slug          String     @unique(map: "slug") @db.VarChar(100)
+  trackingTitle String     @db.VarChar(200)
+  logoUrl       String?    @db.VarChar(255)
+  created_at    DateTime?  @default(now()) @db.DateTime(0)
+  documents     document[]
+  users         users[]
+}
