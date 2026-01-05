@@ -53,7 +53,7 @@ export class InstitutionsController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  async me(@Req() req: Request & { user: { sub: number; email: string } }) {
+  async me(@Req() req: Request & { user: { sub: number; email: string; role?: string } }) {
     const inst = await this.institutionsService.findByUserId(req.user.sub);
     if (!inst) {
       return { status: false, message: 'Instansi tidak ditemukan' };
@@ -64,7 +64,7 @@ export class InstitutionsController {
   @UseGuards(JwtAuthGuard)
   @Patch('me')
   async updateMe(
-    @Req() req: Request & { user: { sub: number; email: string } },
+    @Req() req: Request & { user: { sub: number; email: string; role?: string } },
     @Body() body: UpdateInstitutionDto,
   ) {
     const updated = await this.institutionsService.updateForUser(

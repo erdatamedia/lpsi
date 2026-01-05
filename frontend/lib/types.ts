@@ -15,6 +15,7 @@ export type User = {
   id: number;
   name: string;
   email: string;
+  role?: string;
 };
 
 export type DocumentHistoris = {
@@ -37,6 +38,14 @@ export type DocumentItem = {
 export type DocumentDetail = DocumentItem & {
   historis: DocumentHistoris[];
   institution?: Institution;
+};
+
+export type AdminUser = {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  institution?: Institution | null;
 };
 
 export type PaginatedDocuments = {

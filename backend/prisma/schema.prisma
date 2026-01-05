@@ -39,6 +39,7 @@ model users {
   name          String       @db.VarChar(100)
   email         String       @db.VarChar(100)
   password      String       @db.VarChar(100)
+  role          String       @default("admin") @db.VarChar(30)
   institutionId Int?
   institution   institution? @relation(fields: [institutionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_users_institution")
   documents     document[]

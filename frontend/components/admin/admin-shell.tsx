@@ -10,25 +10,32 @@ type NavItem = {
   href: string;
 };
 
-const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/admin/documents" },
-  { label: "Data Dokumen", href: "/admin/data-dokumen" },
-  { label: "Pengaturan Lab", href: "/admin/institution" },
-  { label: "Profil", href: "/admin/profile" },
-];
-
 export function AdminShell({
   title,
   description,
   children,
   actions,
+  role,
 }: {
   title: string;
   description?: string;
   children: ReactNode;
   actions?: ReactNode;
+  role?: string;
 }) {
   const pathname = usePathname();
+  const navItems: NavItem[] =
+    role === "superadmin"
+      ? [
+          { label: "Dashboard", href: "/admin/documents" },
+          { label: "Manajemen User", href: "/admin/users" },
+        ]
+      : [
+          { label: "Dashboard", href: "/admin/documents" },
+          { label: "Data Dokumen", href: "/admin/data-dokumen" },
+          { label: "Pengaturan Lab", href: "/admin/institution" },
+          { label: "Profil", href: "/admin/profile" },
+        ];
 
   const handleLogout = () => {
     if (typeof localStorage !== "undefined") {

@@ -28,7 +28,7 @@ import { randomBytes } from 'crypto';
 import { extname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 
-type AuthRequest = Request & { user: { sub: number; email: string } };
+type AuthRequest = Request & { user: { sub: number; email: string; role?: string } };
 
 const MAX_PDF_BYTES = 1024 * 1024;
 const UPLOAD_DIR = join(process.cwd(), 'uploads', 'historis');

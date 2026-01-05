@@ -10,7 +10,7 @@ import type { ApiResponse } from "@/lib/types";
 
 type LoginResponse = ApiResponse<{
   accessToken: string;
-  user: { id: number; name: string; email: string };
+  user: { id: number; name: string; email: string; role?: string };
   institution?: { id: number; name: string; slug: string; trackingTitle: string };
 }>;
 

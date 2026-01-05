@@ -15,7 +15,7 @@ import { useRouter } from "next/navigation";
 type ListResponse = ApiResponse<PaginatedDocuments>;
 
 export default function DataDokumenPage() {
-  const { loading: authLoading } = useRequireAuth();
+  const { loading: authLoading, profile } = useRequireAuth();
   const router = useRouter();
   const [items, setItems] = useState<DocumentItem[]>([]);
   const [page, setPage] = useState(1);
@@ -25,6 +25,17 @@ export default function DataDokumenPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editItem, setEditItem] = useState<DocumentItem | null>(null);
+  const [editKode, setEditKode] = useState("");
+  const [editDurasi, setEditDurasi] = useState(1);
+  const [editStatus, setEditStatus] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const statusOptions = useMemo(
+    () => ["dibuat", "proses", "proses-pengujian", "selesai", "ditolak"],
+    [],
+  );
 
   const filtered = useMemo(() => {
     if (!kodeFilter.trim()) return items;
@@ -51,6 +62,59 @@ export default function DataDokumenPage() {
     setLoading(false);
   };
 
+  const startEdit = (doc: DocumentItem) => {
+    setEditItem(doc);
+    setEditKode(doc.kode);
+    setEditDurasi(doc.durasi);
+    setEditStatus(doc.status);
+    setError(null);
+  };
+
+  const cancelEdit = () => {
+    setEditItem(null);
+    setEditKode("");
+    setEditDurasi(1);
+    setEditStatus("");
+  };
+
+  const saveEdit = async () => {
+    if (!editItem) return;
+    if (!editKode.trim() || !editStatus.trim()) {
+      setError("Kode dan status wajib diisi");
+      return;
+    }
+    setEditLoading(true);
+    const res = await api.patch<ApiResponse<DocumentItem>["data"]>(
+      `/admin/documents/${editItem.id}`,
+      { kode: editKode.trim(), durasi: Number(editDurasi), status: editStatus },
+      true,
+    );
+    setEditLoading(false);
+    if (!res.status) {
+      setError(res.message || "Gagal memperbarui dokumen");
+      return;
+    }
+    cancelEdit();
+    void load(page);
+  };
+
+  const removeDoc = async (docId: number) => {
+    if (!window.confirm("Hapus dokumen ini? Tindakan ini tidak bisa dibatalkan.")) {
+      return;
+    }
+    setDeleteId(docId);
+    const res = await api.delete<ApiResponse<null>["data"]>(
+      `/admin/documents/${docId}`,
+      true,
+    );
+    setDeleteId(null);
+    if (!res.status) {
+      setError(res.message || "Gagal menghapus dokumen");
+      return;
+    }
+    void load(page);
+  };
+
   useEffect(() => {
     if (authLoading) return;
     void load(1);
@@ -61,6 +125,7 @@ export default function DataDokumenPage() {
     <AdminShell
       title="Data Dokumen"
       description="Kelola semua dokumen dan status hasil uji"
+      role={profile?.user.role}
       actions={
         <div className="flex gap-2">
           <Button size="sm" variant="secondary" onClick={() => void load(page)} disabled={loading}>
@@ -102,6 +167,49 @@ export default function DataDokumenPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           {error ? <p className="text-sm text-red-500">{error}</p> : null}
+          {editItem ? (
+            <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold">Edit Dokumen</p>
+                <button
+                  className="text-xs text-muted-foreground underline"
+                  onClick={cancelEdit}
+                >
+                  Batal
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Input
+                  placeholder="Kode"
+                  className="w-52"
+                  value={editKode}
+                  onChange={(e) => setEditKode(e.target.value)}
+                />
+                <Input
+                  type="number"
+                  placeholder="Durasi"
+                  className="w-32"
+                  value={editDurasi}
+                  onChange={(e) => setEditDurasi(Number(e.target.value))}
+                />
+                <Select
+                  value={editStatus}
+                  onValueChange={(val) => setEditStatus(val)}
+                  className="w-44"
+                  placeholder="Status"
+                >
+                  {statusOptions.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </Select>
+                <Button size="sm" onClick={saveEdit} disabled={editLoading}>
+                  {editLoading ? "Menyimpan..." : "Simpan"}
+                </Button>
+              </div>
+            </div>
+          ) : null}
           <div className="overflow-auto border border-border rounded-lg">
             <table className="min-w-full text-sm">
               <thead className="bg-muted/50">
@@ -121,9 +229,24 @@ export default function DataDokumenPage() {
                     <td className="px-3 py-2">{d.durasi} hari</td>
                     <td className="px-3 py-2">{d.user.name}</td>
                     <td className="px-3 py-2">
-                      <Link href={`/admin/documents/${d.id}`} className="text-primary">
-                        Detail
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link href={`/admin/documents/${d.id}`} className="text-primary">
+                          Detail
+                        </Link>
+                        <button
+                          className="text-xs text-muted-foreground underline"
+                          onClick={() => startEdit(d)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="text-xs text-red-500 underline"
+                          onClick={() => void removeDoc(d.id)}
+                          disabled={deleteId === d.id}
+                        >
+                          {deleteId === d.id ? "Menghapus..." : "Hapus"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -3,22 +3,23 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import type { ApiResponse, PaginatedDocuments, DocumentItem } from "@/lib/types";
+import type { AdminUser, ApiResponse, PaginatedDocuments, DocumentItem } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { KpiCard } from "@/components/admin/kpi-card";
 import { StatusChart } from "@/components/admin/status-chart";
-import { FileText } from "lucide-react";
+import { FileText, Shield, Users } from "lucide-react";
 import { useRequireAuth } from "@/lib/use-auth";
 import { Select } from "@/components/ui/select";
 
 type ListResponse = ApiResponse<PaginatedDocuments>;
 
 export default function DocumentsPage() {
-  const { loading: authLoading } = useRequireAuth();
+  const { loading: authLoading, profile } = useRequireAuth();
   const [items, setItems] = useState<DocumentItem[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(200);
   const [status, setStatus] = useState("");
@@ -27,6 +28,8 @@ export default function DocumentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [year, setYear] = useState<string | undefined>(undefined);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     let data = items;
@@ -87,22 +90,71 @@ export default function DocumentsPage() {
     setLoading(false);
   };
 
+  const loadUsers = async () => {
+    setUsersLoading(true);
+    const res = await api.get<ApiResponse<AdminUser[]>["data"]>("/admin/users", true);
+    if (!res.status) {
+      setUsersError(res.message || "Gagal memuat data user");
+    } else {
+      setUsers(res.data ?? []);
+      setUsersError(null);
+    }
+    setUsersLoading(false);
+  };
+
   useEffect(() => {
     if (authLoading) return;
+    if (profile?.user.role === "superadmin") {
+      void loadUsers();
+      return;
+    }
     void load(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, authLoading]);
+  }, [status, authLoading, profile?.user.role]);
+
+  const superadminKpi = useMemo(() => {
+    const totalUsers = users.length;
+    const totalAdmins = users.filter((u) => u.role === "admin").length;
+    const totalSuperadmins = users.filter((u) => u.role === "superadmin").length;
+    return { totalUsers, totalAdmins, totalSuperadmins };
+  }, [users]);
 
   return (
     <AdminShell
       title="Dashboard"
-      description="Ikhtisar hasil uji per lab"
+      description={
+        profile?.user.role === "superadmin"
+          ? "Ringkasan user dan akses sistem"
+          : "Ikhtisar hasil uji per lab"
+      }
+      role={profile?.user.role}
       actions={
-        <Button asChild variant="secondary" size="sm">
-          <Link href="/admin/profile">Profil</Link>
-        </Button>
+        profile?.user.role === "superadmin" ? null : (
+          <Button asChild variant="secondary" size="sm">
+            <Link href="/admin/profile">Profil</Link>
+          </Button>
+        )
       }
     >
+      {profile?.user.role === "superadmin" ? (
+        <div className="space-y-4">
+          {usersError ? <p className="text-sm text-red-500">{usersError}</p> : null}
+          <div className="grid gap-3 sm:grid-cols-3">
+            <KpiCard label="Total User" value={superadminKpi.totalUsers} icon={<Users className="h-4 w-4" />} />
+            <KpiCard label="Admin Lab" value={superadminKpi.totalAdmins} icon={<FileText className="h-4 w-4" />} />
+            <KpiCard label="Superadmin" value={superadminKpi.totalSuperadmins} icon={<Shield className="h-4 w-4" />} />
+          </div>
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle>Ringkasan</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              {usersLoading ? "Memuat data user..." : "Gunakan menu Manajemen User untuk mengubah akses."}
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <>
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <Select
           value={year ?? ""}
@@ -208,7 +260,8 @@ export default function DocumentsPage() {
           </div>
         </CardContent>
       </Card>
-
+        </>
+      )}
     </AdminShell>
   );
 }

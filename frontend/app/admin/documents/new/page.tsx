@@ -11,7 +11,7 @@ import type { ApiResponse, DocumentItem } from "@/lib/types";
 import { useRequireAuth } from "@/lib/use-auth";
 
 export default function CreateDocumentPage() {
-  const { loading: authLoading } = useRequireAuth();
+  const { loading: authLoading, profile } = useRequireAuth();
   const router = useRouter();
   const [kode, setKode] = useState("");
   const [durasi, setDurasi] = useState(7);
@@ -35,7 +35,7 @@ export default function CreateDocumentPage() {
   };
 
   return (
-    <AdminShell title="Buat Dokumen Baru" description="Tambahkan dokumen hasil uji">
+    <AdminShell title="Buat Dokumen Baru" description="Tambahkan dokumen hasil uji" role={profile?.user.role}>
       <Card className="glass-card max-w-xl">
         <CardHeader>
           <CardTitle>Form Dokumen</CardTitle>

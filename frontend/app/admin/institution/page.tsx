@@ -13,7 +13,7 @@ import Image from "next/image";
 type InstitutionResponse = ApiResponse<Institution>;
 
 export default function InstitutionSettingsPage() {
-  const { loading: authLoading } = useRequireAuth();
+  const { loading: authLoading, profile } = useRequireAuth();
   const [inst, setInst] = useState<Institution | null>(null);
   const [name, setName] = useState("");
   const [trackingTitle, setTrackingTitle] = useState("");
@@ -89,7 +89,7 @@ export default function InstitutionSettingsPage() {
   const trackingUrl = inst ? `${window.location.origin}/${inst.slug}` : "";
 
   return (
-    <AdminShell title="Pengaturan Lab" description="Ubah judul tracking & logo">
+    <AdminShell title="Pengaturan Lab" description="Ubah judul tracking & logo" role={profile?.user.role}>
       <Card className="glass-card">
         <CardHeader>
           <CardTitle>Branding Lab</CardTitle>

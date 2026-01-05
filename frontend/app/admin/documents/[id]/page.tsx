@@ -17,7 +17,7 @@ const MAX_PDF_BYTES = 1024 * 1024;
 export default function DocumentDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { loading: authLoading } = useRequireAuth();
+  const { loading: authLoading, profile } = useRequireAuth();
   const [data, setData] = useState<DocumentDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -118,6 +118,7 @@ export default function DocumentDetailPage() {
     <AdminShell
       title="Detail Hasil Lab"
       description="Pelacakan status dan riwayat"
+      role={profile?.user.role}
       actions={
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => router.back()}>
