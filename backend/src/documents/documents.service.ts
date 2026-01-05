@@ -34,6 +34,8 @@ type DocumentDetail = DocumentItem & {
     id: number;
     waktu: Date;
     status: string;
+    note?: string | null;
+    attachmentUrl?: string | null;
   }[];
 };
 
@@ -140,6 +142,7 @@ export class DocumentsService {
             waktu: true,
             status: true,
             note: true,
+            attachmentUrl: true,
           },
         },
       },
@@ -238,6 +241,8 @@ export class DocumentsService {
     id: number;
     waktu: Date;
     status: string;
+    note?: string | null;
+    attachmentUrl?: string | null;
   }> {
     const institutionId = await this.getUserInstitutionId(authUser.id);
     await this.ensureDocumentScope(docId, institutionId);
@@ -248,6 +253,7 @@ export class DocumentsService {
           id_document: docId,
           status: dto.status,
           note: dto.note,
+          attachmentUrl: dto.attachmentUrl,
           waktu: dto.waktu ?? new Date(),
         },
         select: {
@@ -255,6 +261,7 @@ export class DocumentsService {
           waktu: true,
           status: true,
           note: true,
+          attachmentUrl: true,
         },
       }),
       this.prisma.document.update({

@@ -29,6 +29,7 @@ model historis {
   waktu       DateTime @db.DateTime(0)
   status      String   @db.VarChar(100)
   note        String?  @db.VarChar(255)
+  attachmentUrl String? @db.VarChar(255)
 
   document document @relation(fields: [id_document], references: [id])
 }

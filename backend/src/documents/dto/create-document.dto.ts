@@ -16,4 +16,5 @@ export class CreateHistorisDto {
   status!: string;
   note?: string;
   waktu?: Date;
+  attachmentUrl?: string;
 }

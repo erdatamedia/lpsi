@@ -12,6 +12,7 @@ import { useRequireAuth } from "@/lib/use-auth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type DetailResponse = ApiResponse<DocumentDetail>;
+const MAX_PDF_BYTES = 1024 * 1024;
 
 export default function DocumentDetailPage() {
   const params = useParams<{ id: string }>();
@@ -22,6 +23,8 @@ export default function DocumentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [histStatus, setHistStatus] = useState("");
   const [note, setNote] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
   const [histLoading, setHistLoading] = useState(false);
   const statusOptions = useMemo(
     () => ["dibuat", "proses", "proses-pengujian", "selesai", "ditolak"],
@@ -49,21 +52,65 @@ export default function DocumentDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id, authLoading]);
 
+  useEffect(() => {
+    if (histStatus !== "selesai") {
+      setFile(null);
+      setFileError(null);
+    }
+  }, [histStatus]);
+
+  const handleFileChange = (nextFile: File | null) => {
+    if (!nextFile) {
+      setFile(null);
+      setFileError(null);
+      return;
+    }
+
+    if (nextFile.type !== "application/pdf") {
+      setFile(null);
+      setFileError("File harus PDF.");
+      return;
+    }
+
+    if (nextFile.size > MAX_PDF_BYTES) {
+      setFile(null);
+      setFileError("Ukuran maksimal 1 MB.");
+      return;
+    }
+
+    setFile(nextFile);
+    setFileError(null);
+  };
+
   const addHistoris = async () => {
     if (!histStatus.trim()) return;
+    if (histStatus === "selesai" && !file) {
+      setFileError("PDF wajib diunggah untuk status selesai.");
+      return;
+    }
+    if (fileError) return;
     setHistLoading(true);
-    const res = await api.post<ApiResponse<DocumentHistoris>["data"]>(
-      `/admin/documents/${params.id}/historis`,
-      { status: histStatus, note },
-      true,
-    );
+    const formData = new FormData();
+    formData.append("status", histStatus);
+    if (note.trim()) formData.append("note", note.trim());
+    if (file) formData.append("file", file);
+
+    const token = typeof localStorage === "undefined" ? null : localStorage.getItem("token");
+    const res = await fetch(`${api.baseUrl}/admin/documents/${params.id}/historis`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: formData,
+    });
+    const json = (await res.json()) as ApiResponse<DocumentHistoris>;
     setHistLoading(false);
-    if (!res.status) {
-      setError(res.message || "Gagal menambah historis");
+    if (!json.status) {
+      setError(json.message || "Gagal menambah historis");
       return;
     }
     setHistStatus("");
     setNote("");
+    setFile(null);
+    setFileError(null);
     void load();
   };
 
@@ -137,6 +184,21 @@ export default function DocumentDetailPage() {
                 onChange={(e) => setNote(e.target.value)}
                 className="w-64"
               />
+              <div className="flex flex-col gap-1">
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  className="text-xs text-muted-foreground"
+                  onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
+                  disabled={histStatus !== "selesai"}
+                />
+                <span className="text-[11px] text-muted-foreground">
+                  PDF wajib untuk status selesai (maks. 1 MB).
+                </span>
+                {fileError ? (
+                  <span className="text-[11px] text-red-500">{fileError}</span>
+                ) : null}
+              </div>
               <Button onClick={addHistoris} disabled={histLoading}>
                 {histLoading ? "Menyimpan..." : "Tambah"}
               </Button>
@@ -155,6 +217,16 @@ export default function DocumentDetailPage() {
                           <span className="text-xs text-muted-foreground"> — {h.note}</span>
                         ) : null}
                       </p>
+                      {h.attachmentUrl ? (
+                        <a
+                          href={`${api.baseUrl}${h.attachmentUrl}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-1 block text-xs text-primary underline"
+                        >
+                          Unduh PDF hasil
+                        </a>
+                      ) : null}
                       <p className="text-xs text-muted-foreground">
                         {new Date(h.waktu).toLocaleString()}
                       </p>

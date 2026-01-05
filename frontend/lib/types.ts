@@ -22,6 +22,7 @@ export type DocumentHistoris = {
   waktu: string;
   status: string;
   note?: string | null;
+  attachmentUrl?: string | null;
 };
 
 export type DocumentItem = {

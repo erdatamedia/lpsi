@@ -77,6 +77,21 @@ export class InstitutionsService {
     });
   }
 
+  async listPublic() {
+    return this.prisma.institution.findMany({
+      orderBy: { created_at: 'desc' },
+      take: 50,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        trackingTitle: true,
+        logoUrl: true,
+        created_at: true,
+      },
+    });
+  }
+
   async findByUserId(userId: number) {
     return this.prisma.institution.findFirst({
       where: { users: { some: { id: userId } } },

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -8,7 +9,9 @@ import {
   Post,
   Query,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DocumentsService } from './documents.service';
@@ -19,8 +22,22 @@ import {
 } from './dto/create-document.dto';
 import { ListDocumentsQueryDto } from './dto/list-documents.dto';
 import type { Request } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { randomBytes } from 'crypto';
+import { extname, join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 
 type AuthRequest = Request & { user: { sub: number; email: string } };
+
+const MAX_PDF_BYTES = 1024 * 1024;
+const UPLOAD_DIR = join(process.cwd(), 'uploads', 'historis');
+
+function ensureUploadDir() {
+  if (!existsSync(UPLOAD_DIR)) {
+    mkdirSync(UPLOAD_DIR, { recursive: true });
+  }
+}
 
 @UseGuards(JwtAuthGuard)
 @Controller('admin/documents')
@@ -92,17 +109,56 @@ export class DocumentsController {
     return { status: true, message: 'Dokumen dihapus' };
   }
 
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: (_req, _file, cb) => {
+          ensureUploadDir();
+          cb(null, UPLOAD_DIR);
+        },
+        filename: (_req, file, cb) => {
+          const ext = extname(file.originalname).toLowerCase() || '.pdf';
+          const name = `${Date.now()}-${randomBytes(6).toString('hex')}${ext}`;
+          cb(null, name);
+        },
+      }),
+      limits: { fileSize: MAX_PDF_BYTES },
+      fileFilter: (_req, file, cb) => {
+        const ext = extname(file.originalname).toLowerCase();
+        const isPdf =
+          file.mimetype === 'application/pdf' || ext === '.pdf';
+        if (!isPdf) {
+          cb(new BadRequestException('File harus PDF'), false);
+          return;
+        }
+        cb(null, true);
+      },
+    }),
+  )
   @Post(':id/historis')
   async addHistoris(
     @Req() req: AuthRequest,
     @Param('id') id: string,
     @Body() body: CreateHistorisDto,
+    @UploadedFile() file?: Express.Multer.File,
   ) {
+    const status = body.status?.trim();
+    if (!status) {
+      throw new BadRequestException('Status wajib diisi');
+    }
+    if (status === 'selesai' && !file) {
+      throw new BadRequestException('Upload PDF wajib untuk status selesai');
+    }
     const docId = Number(id);
+    const attachmentUrl = file ? `/uploads/historis/${file.filename}` : undefined;
     const data = await this.documentsService.addHistoris(
       { id: req.user.sub, email: req.user.email },
       docId,
-      body,
+      {
+        ...body,
+        status,
+        attachmentUrl,
+      },
     );
 
     return { status: true, data };

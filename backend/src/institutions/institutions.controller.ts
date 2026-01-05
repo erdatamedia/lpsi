@@ -28,6 +28,12 @@ export class InstitutionsController {
     };
   }
 
+  @Get()
+  async list() {
+    const data = await this.institutionsService.listPublic();
+    return { status: true, data };
+  }
+
   @Get(':slug')
   async findBySlug(@Param('slug') slug: string) {
     const data = await this.institutionsService.findBySlug(slug);

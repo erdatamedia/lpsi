@@ -42,6 +42,7 @@ export class TrackingService {
           waktu: true,
           status: true,
           note: true,
+          attachmentUrl: true,
         },
       }),
     ]);
