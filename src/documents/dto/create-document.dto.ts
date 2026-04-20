@@ -1,0 +1,21 @@
+export class CreateDocumentDto {
+  kode!: string;
+  durasi!: number;
+  status!: string;
+  downloadUrl?: string;
+  createdAt?: Date;
+  userId?: number;
+}
+
+export class UpdateDocumentDto {
+  kode?: string;
+  durasi?: number;
+  status?: string;
+  downloadUrl?: string;
+}
+
+export class CreateHistorisDto {
+  status!: string;
+  note?: string;
+  waktu?: Date;
+}
