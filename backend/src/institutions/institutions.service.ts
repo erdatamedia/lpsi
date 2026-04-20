@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma.service';
 import { RegisterInstitutionDto } from './dto/register-institution.dto';
@@ -9,10 +13,31 @@ import { UpdateInstitutionDto } from './dto/update-institution.dto';
 export class InstitutionsService {
   constructor(private prisma: PrismaService) {}
 
+  /**
+   * Normalisasi slug agar konsisten di DB dan URL.
+   */
+  private normalizeSlug(raw: string) {
+    const cleaned = raw
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    if (!cleaned) {
+      throw new BadRequestException('Slug instansi wajib diisi');
+    }
+
+    return cleaned;
+  }
+
   async register(data: RegisterInstitutionDto) {
+    const normalizedSlug = this.normalizeSlug(data.slug);
+
     // pastikan slug unik
     const existing = await this.prisma.institution.findUnique({
-      where: { slug: data.slug },
+      where: { slug: normalizedSlug },
     });
 
     if (existing) {
@@ -28,7 +53,7 @@ export class InstitutionsService {
       const institution = await tx.institution.create({
         data: {
           name: data.name,
-          slug: data.slug,
+          slug: normalizedSlug,
           trackingTitle: data.trackingTitle,
         },
       });
@@ -77,21 +102,6 @@ export class InstitutionsService {
     });
   }
 
-  async listPublic() {
-    return this.prisma.institution.findMany({
-      orderBy: { created_at: 'desc' },
-      take: 50,
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        trackingTitle: true,
-        logoUrl: true,
-        created_at: true,
-      },
-    });
-  }
-
   async findByUserId(userId: number) {
     return this.prisma.institution.findFirst({
       where: { users: { some: { id: userId } } },
@@ -109,7 +119,7 @@ export class InstitutionsService {
   async updateForUser(userId: number, dto: UpdateInstitutionDto) {
     const institution = await this.prisma.institution.findFirst({
       where: { users: { some: { id: userId } } },
-      select: { id: true },
+      select: { id: true, slug: true },
     });
 
     if (!institution) {
@@ -120,6 +130,21 @@ export class InstitutionsService {
     if (dto.name !== undefined) data.name = dto.name;
     if (dto.trackingTitle !== undefined) data.trackingTitle = dto.trackingTitle;
     if (dto.logoUrl !== undefined) data.logoUrl = dto.logoUrl;
+    if (dto.slug !== undefined) {
+      const normalizedSlug = this.normalizeSlug(dto.slug);
+
+      if (normalizedSlug !== institution.slug) {
+        const existing = await this.prisma.institution.findUnique({
+          where: { slug: normalizedSlug },
+        });
+
+        if (existing && existing.id !== institution.id) {
+          throw new ConflictException('Slug instansi sudah digunakan');
+        }
+      }
+
+      data.slug = normalizedSlug;
+    }
 
     const updated = await this.prisma.institution.update({
       where: { id: institution.id },

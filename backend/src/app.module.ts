@@ -7,7 +7,6 @@ import { TrackingModule } from './tracking/tracking.module';
 import { InstitutionsModule } from './institutions/institutions.module';
 import { AuthModule } from './auth/auth.module';
 import { DocumentsModule } from './documents/documents.module';
-import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -17,7 +16,6 @@ import { UsersModule } from './users/users.module';
     InstitutionsModule,
     AuthModule,
     DocumentsModule,
-    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -13,9 +13,10 @@ import Image from "next/image";
 type InstitutionResponse = ApiResponse<Institution>;
 
 export default function InstitutionSettingsPage() {
-  const { loading: authLoading, profile } = useRequireAuth();
+  const { loading: authLoading } = useRequireAuth();
   const [inst, setInst] = useState<Institution | null>(null);
   const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
   const [trackingTitle, setTrackingTitle] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [loading, setLoading] = useState(true);
@@ -29,9 +30,11 @@ export default function InstitutionSettingsPage() {
       const cached = localStorage.getItem("instLogoUrl");
       const cachedTitle = localStorage.getItem("instTrackingTitle");
       const cachedName = localStorage.getItem("instName");
+      const cachedSlug = localStorage.getItem("instSlug");
       if (cached) setLogoUrl(cached);
       if (cachedTitle) setTrackingTitle(cachedTitle);
       if (cachedName) setName(cachedName);
+      if (cachedSlug) setSlug(cachedSlug);
     }
   }, []);
 
@@ -40,8 +43,9 @@ export default function InstitutionSettingsPage() {
       localStorage.setItem("instLogoUrl", logoUrl);
       localStorage.setItem("instTrackingTitle", trackingTitle);
       localStorage.setItem("instName", name);
+      localStorage.setItem("instSlug", slug);
     }
-  }, [logoUrl, trackingTitle, name]);
+  }, [logoUrl, trackingTitle, name, slug]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -52,6 +56,7 @@ export default function InstitutionSettingsPage() {
       if (res.status) {
         setInst(res.data ?? null);
         setName(res.data?.name ?? "");
+        setSlug(res.data?.slug ?? "");
         setTrackingTitle(res.data?.trackingTitle ?? "");
         setLogoUrl(res.data?.logoUrl || "");
         setError(null);
@@ -73,7 +78,7 @@ export default function InstitutionSettingsPage() {
     setError(null);
     const res = await api.patch<InstitutionResponse["data"]>(
       "/institutions/me",
-      { name, trackingTitle, logoUrl },
+      { name, slug, trackingTitle, logoUrl },
       true,
     );
     setSaving(false);
@@ -86,10 +91,13 @@ export default function InstitutionSettingsPage() {
     setError(null);
   };
 
-  const trackingUrl = inst ? `${window.location.origin}/${inst.slug}` : "";
+  const currentSlug = slug || inst?.slug || "";
+  const trackingUrl = currentSlug
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/${currentSlug}`
+    : "";
 
   return (
-    <AdminShell title="Pengaturan Lab" description="Ubah judul tracking & logo" role={profile?.user.role}>
+    <AdminShell title="Pengaturan Lab" description="Ubah judul tracking & logo">
       <Card className="glass-card">
         <CardHeader>
           <CardTitle>Branding Lab</CardTitle>
@@ -107,6 +115,16 @@ export default function InstitutionSettingsPage() {
               onChange={(e) => setName(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">Nama instansi/lab.</p>
+          </div>
+          <div className="space-y-1">
+            <Input
+              placeholder="Slug (misal: labmu)"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Slug untuk URL tracking publik. Gunakan huruf kecil/angka/tanda minus.
+            </p>
           </div>
           <Input
             placeholder="Judul Tracking"

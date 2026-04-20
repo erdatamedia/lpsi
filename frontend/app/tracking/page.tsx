@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const apiBase = process.env.NEXT_PUBLIC_API_BASE || "https://api.kementan.brmprb.site";
+const apiBase = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000";
 
 type TrackingResponse = {
   id: number;
   kode: string;
   status: string;
   durasi: number;
+  downloadUrl?: string | null;
   created_at: string;
   user?: { id: number; name: string; email: string };
   historis?: { id: number; waktu: string; status: string }[];
@@ -150,6 +151,19 @@ function TrackingResult({ data }: { data: TrackingResponse }) {
         <Info label="Instansi" value={data.institution?.name || "-"} />
         <Info label="Judul Tracking" value={data.institution?.trackingTitle || "-"} />
       </div>
+
+      {data.downloadUrl ? (
+        <div className="flex justify-start">
+          <a
+            href={data.downloadUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Download Hasil
+          </a>
+        </div>
+      ) : null}
 
       {data.historis?.length ? (
         <div>

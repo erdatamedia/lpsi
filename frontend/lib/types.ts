@@ -15,7 +15,6 @@ export type User = {
   id: number;
   name: string;
   email: string;
-  role?: string;
 };
 
 export type DocumentHistoris = {
@@ -23,7 +22,6 @@ export type DocumentHistoris = {
   waktu: string;
   status: string;
   note?: string | null;
-  attachmentUrl?: string | null;
 };
 
 export type DocumentItem = {
@@ -31,6 +29,7 @@ export type DocumentItem = {
   kode: string;
   durasi: number;
   status: string;
+  downloadUrl?: string | null;
   created_at: string | null;
   user: User;
 };
@@ -38,14 +37,6 @@ export type DocumentItem = {
 export type DocumentDetail = DocumentItem & {
   historis: DocumentHistoris[];
   institution?: Institution;
-};
-
-export type AdminUser = {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  institution?: Institution | null;
 };
 
 export type PaginatedDocuments = {

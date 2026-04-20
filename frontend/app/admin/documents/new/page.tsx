@@ -11,10 +11,11 @@ import type { ApiResponse, DocumentItem } from "@/lib/types";
 import { useRequireAuth } from "@/lib/use-auth";
 
 export default function CreateDocumentPage() {
-  const { loading: authLoading, profile } = useRequireAuth();
+  const { loading: authLoading } = useRequireAuth();
   const router = useRouter();
   const [kode, setKode] = useState("");
   const [durasi, setDurasi] = useState(7);
+  const [downloadUrl, setDownloadUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +24,12 @@ export default function CreateDocumentPage() {
     setError(null);
     const res = await api.post<ApiResponse<DocumentItem>["data"]>(
       "/admin/documents",
-      { kode, durasi: Number(durasi), status: "proses" },
+      {
+        kode,
+        durasi: Number(durasi),
+        status: "proses",
+        downloadUrl: downloadUrl.trim() || undefined,
+      },
       true,
     );
     setLoading(false);
@@ -35,7 +41,7 @@ export default function CreateDocumentPage() {
   };
 
   return (
-    <AdminShell title="Buat Dokumen Baru" description="Tambahkan dokumen hasil uji" role={profile?.user.role}>
+    <AdminShell title="Buat Dokumen Baru" description="Tambahkan dokumen hasil uji">
       <Card className="glass-card max-w-xl">
         <CardHeader>
           <CardTitle>Form Dokumen</CardTitle>
@@ -60,6 +66,16 @@ export default function CreateDocumentPage() {
           <p className="text-xs text-muted-foreground">
             Durasi estimasi proses dalam hari.
           </p>
+          <div className="space-y-1">
+            <Input
+              placeholder="Link download hasil (opsional)"
+              value={downloadUrl}
+              onChange={(e) => setDownloadUrl(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Jika diisi sejak awal, tombol download langsung tampil di halaman tracking.
+            </p>
+          </div>
           {error ? <p className="text-sm text-red-500">{error}</p> : null}
           <div className="flex gap-2">
             <Button onClick={submit} disabled={loading}>

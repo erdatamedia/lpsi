@@ -15,7 +15,7 @@ type ProfileData = {
 };
 
 export default function AdminProfilePage() {
-  const { loading: authLoading, profile } = useRequireAuth();
+  const { loading: authLoading } = useRequireAuth();
   const [data, setData] = useState<ProfileData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,7 +56,7 @@ export default function AdminProfilePage() {
   };
 
   return (
-    <AdminShell title="Profil Admin" description="Data pengguna dan instansi" role={profile?.user.role}>
+    <AdminShell title="Profil Admin" description="Data pengguna dan instansi">
       <Card className="glass-card">
         <CardHeader>
           <CardTitle>Data Pengguna</CardTitle>

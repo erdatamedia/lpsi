@@ -1,12 +1,14 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import type { ApiResponse, Institution } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 type TrackingData = {
@@ -14,14 +16,9 @@ type TrackingData = {
   kode: string;
   status: string;
   durasi: number;
+  downloadUrl?: string | null;
   created_at: string;
-  historis?: {
-    id: number;
-    waktu: string;
-    status: string;
-    note?: string | null;
-    attachmentUrl?: string | null;
-  }[];
+  historis?: { id: number; waktu: string; status: string; note?: string | null }[];
 };
 
 export default function PublicTrackingPage() {
@@ -132,11 +129,6 @@ function ResultCard({ data }: { data: TrackingData }) {
   const timeline = [...historis];
   const last = timeline[timeline.length - 1];
   const docTimestamp = data.created_at ? new Date(data.created_at).toISOString() : new Date().toISOString();
-  const statusSteps = ["dibuat", "proses", "proses-pengujian", "selesai"];
-  const statusIndex = Math.max(0, statusSteps.indexOf(data.status));
-  const latestAttachment = [...historis]
-    .filter((item) => item.attachmentUrl)
-    .pop();
 
   // Tambahkan status dokumen terkini jika belum ada di historis
   if (!last || last.status !== data.status) {
@@ -149,56 +141,6 @@ function ResultCard({ data }: { data: TrackingData }) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-border bg-muted/30 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              Status Saat Ini
-            </p>
-            <p className="text-lg font-semibold">{data.status}</p>
-          </div>
-          {data.status === "selesai" ? (
-            latestAttachment?.attachmentUrl ? (
-              <a
-                href={`${api.baseUrl}${latestAttachment.attachmentUrl}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
-              >
-                Unduh PDF Hasil
-              </a>
-            ) : (
-              <span className="text-xs text-muted-foreground">
-                PDF hasil belum tersedia.
-              </span>
-            )
-          ) : (
-            <span className="text-xs text-muted-foreground">
-              Dokumen masih diproses.
-            </span>
-          )}
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {statusSteps.map((step, idx) => {
-            const active = idx === statusIndex;
-            const done = idx < statusIndex;
-            return (
-              <div
-                key={step}
-                className={`rounded-full border px-3 py-2 text-center text-xs font-medium ${
-                  active
-                    ? "border-primary bg-primary/15 text-primary"
-                    : done
-                      ? "border-primary/50 bg-primary/10 text-primary/80"
-                      : "border-border bg-background"
-                }`}
-              >
-                {step}
-              </div>
-            );
-          })}
-        </div>
-      </div>
       <div className="grid sm:grid-cols-2 gap-3 text-sm">
         <Info label="Kode" value={data.kode} />
         <Info label="Status" value={data.status} />
@@ -208,6 +150,15 @@ function ResultCard({ data }: { data: TrackingData }) {
           value={data.created_at ? new Date(data.created_at).toLocaleString() : "-"}
         />
       </div>
+      {data.downloadUrl ? (
+        <div className="flex justify-center">
+          <Button asChild>
+            <Link href={data.downloadUrl} target="_blank" rel="noreferrer">
+              Download Hasil
+            </Link>
+          </Button>
+        </div>
+      ) : null}
       {timeline.length ? (
         <div>
           <h4 className="text-center font-semibold text-sm mb-4">Riwayat</h4>
@@ -228,16 +179,6 @@ function ResultCard({ data }: { data: TrackingData }) {
                         <span className="text-xs text-muted-foreground"> — {h.note}</span>
                       ) : null}
                     </p>
-                    {h.attachmentUrl ? (
-                      <a
-                        href={`${api.baseUrl}${h.attachmentUrl}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="mt-1 block text-xs text-primary underline"
-                      >
-                        Unduh PDF hasil
-                      </a>
-                    ) : null}
                     <p className="text-xs text-muted-foreground">
                       {new Date(h.waktu).toLocaleString()}
                     </p>

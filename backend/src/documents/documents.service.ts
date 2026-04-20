@@ -21,6 +21,7 @@ type DocumentItem = {
   kode: string;
   durasi: number;
   status: string;
+  downloadUrl: string | null;
   created_at: Date | null;
   user: {
     id: number;
@@ -34,8 +35,6 @@ type DocumentDetail = DocumentItem & {
     id: number;
     waktu: Date;
     status: string;
-    note?: string | null;
-    attachmentUrl?: string | null;
   }[];
 };
 
@@ -96,6 +95,7 @@ export class DocumentsService {
           kode: true,
           durasi: true,
           status: true,
+          downloadUrl: true,
           created_at: true,
           user: {
             select: {
@@ -127,6 +127,7 @@ export class DocumentsService {
         kode: true,
         durasi: true,
         status: true,
+        downloadUrl: true,
         created_at: true,
         user: {
           select: {
@@ -142,7 +143,6 @@ export class DocumentsService {
             waktu: true,
             status: true,
             note: true,
-            attachmentUrl: true,
           },
         },
       },
@@ -166,6 +166,7 @@ export class DocumentsService {
         kode: dto.kode,
         durasi: dto.durasi,
         status: dto.status,
+        downloadUrl: dto.downloadUrl ?? null,
         created_at: dto.createdAt ?? new Date(),
         id_user: dto.userId ?? authUser.id,
         institutionId,
@@ -175,6 +176,7 @@ export class DocumentsService {
         kode: true,
         durasi: true,
         status: true,
+        downloadUrl: true,
         created_at: true,
         user: {
           select: {
@@ -203,12 +205,16 @@ export class DocumentsService {
         ...(dto.kode ? { kode: dto.kode } : {}),
         ...(dto.durasi !== undefined ? { durasi: dto.durasi } : {}),
         ...(dto.status ? { status: dto.status } : {}),
+        ...(dto.downloadUrl !== undefined
+          ? { downloadUrl: dto.downloadUrl || null }
+          : {}),
       },
       select: {
         id: true,
         kode: true,
         durasi: true,
         status: true,
+        downloadUrl: true,
         created_at: true,
         user: {
           select: {
@@ -241,8 +247,6 @@ export class DocumentsService {
     id: number;
     waktu: Date;
     status: string;
-    note?: string | null;
-    attachmentUrl?: string | null;
   }> {
     const institutionId = await this.getUserInstitutionId(authUser.id);
     await this.ensureDocumentScope(docId, institutionId);
@@ -253,7 +257,6 @@ export class DocumentsService {
           id_document: docId,
           status: dto.status,
           note: dto.note,
-          attachmentUrl: dto.attachmentUrl,
           waktu: dto.waktu ?? new Date(),
         },
         select: {
@@ -261,7 +264,6 @@ export class DocumentsService {
           waktu: true,
           status: true,
           note: true,
-          attachmentUrl: true,
         },
       }),
       this.prisma.document.update({

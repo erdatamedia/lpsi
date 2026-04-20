@@ -28,12 +28,6 @@ export class InstitutionsController {
     };
   }
 
-  @Get()
-  async list() {
-    const data = await this.institutionsService.listPublic();
-    return { status: true, data };
-  }
-
   @Get(':slug')
   async findBySlug(@Param('slug') slug: string) {
     const data = await this.institutionsService.findBySlug(slug);
@@ -53,7 +47,7 @@ export class InstitutionsController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  async me(@Req() req: Request & { user: { sub: number; email: string; role?: string } }) {
+  async me(@Req() req: Request & { user: { sub: number; email: string } }) {
     const inst = await this.institutionsService.findByUserId(req.user.sub);
     if (!inst) {
       return { status: false, message: 'Instansi tidak ditemukan' };
@@ -64,7 +58,7 @@ export class InstitutionsController {
   @UseGuards(JwtAuthGuard)
   @Patch('me')
   async updateMe(
-    @Req() req: Request & { user: { sub: number; email: string; role?: string } },
+    @Req() req: Request & { user: { sub: number; email: string } },
     @Body() body: UpdateInstitutionDto,
   ) {
     const updated = await this.institutionsService.updateForUser(

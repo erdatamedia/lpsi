@@ -1,6 +1,6 @@
 import type { ApiResponse } from "./types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://api.kementan.brmprb.site";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3000";
 
 function getToken(): string | null {
   if (typeof localStorage === "undefined") return null;

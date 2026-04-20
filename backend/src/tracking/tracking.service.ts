@@ -16,6 +16,7 @@ export class TrackingService {
         id_user: true,
         durasi: true,
         status: true,
+        downloadUrl: true,
         created_at: true,
       },
     });
@@ -42,7 +43,6 @@ export class TrackingService {
           waktu: true,
           status: true,
           note: true,
-          attachmentUrl: true,
         },
       }),
     ]);
@@ -63,6 +63,7 @@ export class TrackingService {
       kode: doc.kode,
       status: doc.status,
       durasi: doc.durasi,
+      downloadUrl: doc.downloadUrl,
       created_at: doc.created_at,
       user,
       historis,
